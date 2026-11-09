@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Minigame May Mắn - Siêu Thị Đăng</title>
+    <style>
+        :root {
+            --primary-color: #ffd700;
+            --accent-color: #ff4757;
+            --bg-glass: rgba(255, 255, 255, 0.1);
+            --border-glass: rgba(255, 255, 255, 0.2);
+            --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #1a1030;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .background-animated {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at 50% 50%, #2a1b4e 0%, #110826 100%);
+            z-index: -2;
+        }
+        .bg-glow {
+            position: fixed;
+            width: 300px; height: 300px;
+            background: #ff007f;
+            filter: blur(150px);
+            border-radius: 50%;
+            z-index: -1;
+            animation: floatGlow 10s infinite alternate;
+        }
+        @keyframes floatGlow {
+            0% { top: 10%; left: 20%; }
+            100% { top: 60%; left: 70%; }
+        }
+        header {
+            text-align: center;
+            padding: 20px 15px;
+            width: 100%;
+            max-width: 600px;
+        }
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        header p {
+            font-size: 0.95rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* Tabs navigation */
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: #fff;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: #1a1030;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            border-color: var(--primary-color);
+        }
+
+        /* Game Sections */
+        .game-section {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 15px 40px;
+        }
+        .game-section.active {
+            display: flex;
+        }
+
+        /* 1. Vòng quay may mắn */
+        .wheel-box {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 20px 0;
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid var(--accent-color);
+            z-index: 10;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .wheel-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.2), inset 0 0 10px rgba(0,0,0,0.5);
+            transition: transform 4s cubic-bezier(0.15, 0.99, 0.35, 1);
+        }
+
+        /* 2. Mở thẻ may mắn */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .card-item {
+            height: 120px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card-item.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            font-weight: bold;
+            box-shadow: var(--shadow-glass);
+        }
+        .card-front {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            border: 2px solid #ffa502;
+            font-size: 1.5rem;
+            color: #fff;
+        }
+        .card-back {
+            background: #fff;
+            color: #1a1030;
+            transform: rotateY(180deg);
+            border: 2px solid var(--primary-color);
+            font-size: 0.85rem;
+        }
+
+        /* 3. Rút thăm may mắn */
+        .box-draw {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            margin-top: 10px;
+        }
+        .box-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* General Button */
+        .btn-action {
+            margin-top: 25px;
+            padding: 14px 40px;
+            background: linear-gradient(45deg, #ffa502, #ff4757);
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+
+        /* Result Popup Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: #2a1b4e;
+            border: 2px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            max-width: 350px;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-content h2 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        .modal-content p {
+            font-size: 1.1rem;
+            margin: 15px 0;
+            line-height: 1.4;
+        }
+        .close-btn {
+            background: var(--primary-color);
+            color: #1a1030;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-animated"></div>
+    <div class="bg-glow"></div>
+
+    <header>
+        <h1>SIÊU THỊ ĐĂNG</h1>
+        <p>Tham gia Minigame - Nhận quà cực đã!</p>
+    </header>
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab('wheel')">Vòng Quay</button>
+        <button class="tab-btn" onclick="switchTab('cards')">Lật Thẻ</button>
+        <button class="tab-btn" onclick="switchTab('draw')">Rút Thăm</button>
+    </div>
+
+    <!-- Section 1: Vòng Quay -->
+    <div id="wheel-section" class="game-section active">
+        <div class="wheel-box">
+            <div class="wheel-pointer"></div>
+            <canvas id="wheelCanvas" class="wheel-canvas" width="320" height="320"></canvas>
+        </div>
+        <button class="btn-action" onclick="spinWheel()">QUAY NGAY</button>
+    </div>
+
+    <!-- Section 2: Lật Thẻ -->
+    <div id="cards-section" class="game-section">
+        <p style="text-align: center; opacity: 0.9;">Hãy chọn 1 lá thẻ may mắn bên dưới:</p>
+        <div class="cards-grid" id="cardsGrid">
+            <!-- Rendered by JavaScript -->
+        </div>
+        <button class="btn-action" onclick="resetCards()">CHƠI LẠI</button>
+    </div>
+
+    <!-- Section 3: Rút Thăm -->
+    <div id="draw-section" class="game-section">
+        <div class="box-draw">
+            <div class="box-icon">🎁</div>
+            <h3>Hòm Thăm May Mắn</h3>
+            <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 8px;">Nhấn nút để rút thăm ngẫu nhiên quà tặng từ Siêu Thị Đăng</p>
+        </div>
+        <button class="btn-action" onclick="drawPrize()">RÚT THĂM</button>
+    </div>
+
+    <!-- Modal Thông Báo Kết Quả -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <h2>CHÚC MỪNG!</h2>
+            <p id="modalText">Bạn đã trúng phần thưởng!</p>
+            <button class="close-btn" onclick="closeModal()">Nhận Phần Thưởng</button>
+        </div>
+    </div>
+
+    <script>
+        // Danh sách quà tặng Siêu thị Đăng
+        const prizes = [
+            "Voucher 20k Siêu Thị Đăng",
+            "Chai Dầu Dừa Nguyên Chất",
+            "Túi Gạo Thơm Mới 5kg",
+            "Chúc Bạn May Mắn Lần Sau",
+            "Voucher 50k Siêu Thị Đăng",
+            "Phần Quà Bí Mật"
+        ];
+
+        const colors = ["#ff4757", "#ffa502", "#2ed573", "#1e90ff", "#9b59b6", "#ff6b81"];
+
+        // 1. Chuyển Tab
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.game-section').forEach(sec => sec.classList.remove('active'));
+            
+            if (tabName === 'wheel') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('wheel-section').classList.add('active');
+            } else if (tabName === 'cards') {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('cards-section').classList.add('active');
+            } else if (tabName === 'draw') {
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                document.getElementById('draw-section').classList.add('active');
+            }
+        }
+
+        // 2. Vẽ & Xử lý Vòng Quay
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const numPrizes = prizes.length;
+        const arc = (2 * Math.PI) / numPrizes;
+        let currentRotation = 0;
+        let isSpinning = false;
+
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2;
+
+            for (let i = 0; i < numPrizes; i++) {
+                const angle = i * arc;
+                ctx.beginPath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + arc);
+                ctx.lineTo(centerX, centerY);
+                ctx.fill();
+
+                // Viết chữ
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 13px sans-serif";
+                ctx.fillText(prizes[i], radius - 15, 5);
+                ctx.restore();
+            }
+        }
+        drawWheel();
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+
+            const selectedIndex = Math.floor(Math.random() * numPrizes);
+            const degreesPerSegment = 360 / numPrizes;
+            // Tính toán góc quay dừng ở giữa ô
+            const targetDegree = 360 * 5 + (360 - (selectedIndex * degreesPerSegment + degreesPerSegment / 2));
+
+            currentRotation += targetDegree;
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                showResult(prizes[selectedIndex]);
+            }, 4000);
+        }
+
+        // 3. Xử lý Lật Thẻ
+        const cardsGrid = document.getElementById('cardsGrid');
+        let cardOpened = false;
+
+        function initCards() {
+            cardsGrid.innerHTML = '';
+            cardOpened = false;
+            // Trộn giải thưởng
+            const shuffled = [...prizes].sort(() => 0.5 - Math.random());
+
+            for (let i = 0; i < 6; i++) {
+                const card = document.createElement('div');
+                card.className = 'card-item';
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">?</div>
+                        <div class="card-back">${shuffled[i]}</div>
+                    </div>
+                `;
+                card.onclick = () => flipCard(card, shuffled[i]);
+                cardsGrid.appendChild(card);
+            }
+        }
+        initCards();
+
+        function flipCard(cardElement, prizeText) {
+            if (cardOpened || cardElement.classList.contains('flipped')) return;
+            cardOpened = true;
+            cardElement.classList.add('flipped');
+            setTimeout(() => {
+                showResult(prizeText);
+            }, 700);
+        }
+
+        function resetCards() {
+            initCards();
+        }
+
+        // 4. Xử lý Rút Thăm
+        function drawPrize() {
+            const randomIndex = Math.floor(Math.random() * prizes.length);
+            showResult(prizes[randomIndex]);
+        }
+
+        // Modal Kết Quả
+        function showResult(text) {
+            document.getElementById('modalText').innerText = text.includes("May Mắn") ? text : `Chúc mừng bạn đã trúng: ${text}`;
+            document.getElementById('resultModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('show');
+        }
+</script>
+</body>
+</html>
